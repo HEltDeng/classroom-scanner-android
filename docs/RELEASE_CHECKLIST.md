@@ -9,7 +9,8 @@
 - [ ] Offline removable-media backup of the JKS confirmed (`PENDING_OFFLINE_MEDIA` until physically copied)
 - [ ] Real Backend authentication and upload (`PENDING_REAL_ACCOUNT` / `PENDING_BACKEND_CONTRACT`)
 - [ ] Real optical QR and CameraX capture evidence (`PENDING_REAL_DEVICE` until executed)
-- [ ] GitHub private repository and Release asset (`PENDING_GITHUB_AUTH` until repository creation is verified)
+- [x] GitHub private repository and `feature/scanner-v1` source branch verified
+- [ ] GitHub Release/tag/APK asset (`PENDING_FORMAL_RELEASE` until real-device and Backend gates are closed)
 
 Keep the following facts separate in every handoff:
 
