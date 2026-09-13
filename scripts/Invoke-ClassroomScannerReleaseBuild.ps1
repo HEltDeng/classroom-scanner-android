@@ -62,6 +62,11 @@ try {
     $artifactStem = "classroom-scanner-android-v0.1.0-code1-release"
     $apkDestination = Join-Path $releaseDirectory ($artifactStem + ".apk")
     Copy-Item -LiteralPath $apkSource -Destination $apkDestination -Force
+    $mappingSource = Join-Path $ProjectRoot "app\build\outputs\mapping\release\mapping.txt"
+    if (-not (Test-Path -LiteralPath $mappingSource -PathType Leaf)) {
+        throw "Release mapping.txt was not produced."
+    }
+    Copy-Item -LiteralPath $mappingSource -Destination (Join-Path $releaseDirectory ($artifactStem + "-mapping.txt")) -Force
     $apkHash = (Get-FileHash -LiteralPath $apkDestination -Algorithm SHA256).Hash.ToUpperInvariant()
     [IO.File]::WriteAllText((Join-Path $releaseDirectory ($artifactStem + ".sha256")), "$apkHash  $([IO.Path]::GetFileName($apkDestination))$([Environment]::NewLine)")
     [IO.File]::WriteAllText((Join-Path $releaseDirectory ($artifactStem + "-release-notes.txt")), @"
