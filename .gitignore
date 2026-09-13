@@ -1,0 +1,27 @@
+# Gradle / Android build output
+.gradle/
+build/
+**/build/
+local.properties
+.idea/
+*.iml
+
+# Signing material and local signing configuration
+*.jks
+*.keystore
+*.p12
+*.pfx
+signing.properties
+local-signing.properties
+**/signing/
+
+# Device/private runtime data
+**/scan-images/
+**/private-logs/
+*.db
+*.db-shm
+*.db-wal
+
+# Locally generated release artifacts are retained on disk, not in source Git.
+/release/*
+!/release/.gitkeep

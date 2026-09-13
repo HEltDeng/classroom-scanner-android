@@ -1,0 +1,122 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "5a9ac72066ab496ca06e6c0eeb5def33",
+    "entities": [
+      {
+        "tableName": "scan_queue",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`local_capture_id` TEXT NOT NULL, `session_id` TEXT NOT NULL, `page_token` TEXT NOT NULL, `image_path` TEXT NOT NULL, `captured_at` INTEGER NOT NULL, `upload_status` TEXT NOT NULL, `retry_count` INTEGER NOT NULL, `server_scan_id` TEXT, `student_name` TEXT, `student_code` TEXT, `request_id` TEXT, `last_error` TEXT, PRIMARY KEY(`local_capture_id`))",
+        "fields": [
+          {
+            "fieldPath": "localCaptureId",
+            "columnName": "local_capture_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "session_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pageToken",
+            "columnName": "page_token",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imagePath",
+            "columnName": "image_path",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "capturedAt",
+            "columnName": "captured_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uploadStatus",
+            "columnName": "upload_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryCount",
+            "columnName": "retry_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverScanId",
+            "columnName": "server_scan_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "studentName",
+            "columnName": "student_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "studentCode",
+            "columnName": "student_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "requestId",
+            "columnName": "request_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastError",
+            "columnName": "last_error",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "local_capture_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_scan_queue_session_id_captured_at",
+            "unique": false,
+            "columnNames": [
+              "session_id",
+              "captured_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_scan_queue_session_id_captured_at` ON `${TABLE_NAME}` (`session_id`, `captured_at`)"
+          },
+          {
+            "name": "index_scan_queue_upload_status",
+            "unique": false,
+            "columnNames": [
+              "upload_status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_scan_queue_upload_status` ON `${TABLE_NAME}` (`upload_status`)"
+          },
+          {
+            "name": "index_scan_queue_server_scan_id",
+            "unique": false,
+            "columnNames": [
+              "server_scan_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_scan_queue_server_scan_id` ON `${TABLE_NAME}` (`server_scan_id`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5a9ac72066ab496ca06e6c0eeb5def33')"
+    ]
+  }
+}
