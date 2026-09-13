@@ -88,6 +88,7 @@ fun ScannerScreen(
     }
     var cameraReady by remember { mutableStateOf(false) }
     var cameraError by remember { mutableStateOf<String?>(null) }
+    var frameQualityMessage by remember { mutableStateOf<String?>(null) }
     var cameraController by remember { mutableStateOf<ScannerCameraController?>(null) }
     var detectedToken by remember { mutableStateOf<String?>(null) }
     var stableFrames by remember { mutableIntStateOf(0) }
@@ -125,6 +126,7 @@ fun ScannerScreen(
                     cameraReady = ready
                     cameraError = error
                 },
+                onFrameQuality = { frameQualityMessage = it },
                 onControllerReady = { cameraController = it },
             )
         } else {
@@ -187,6 +189,7 @@ fun ScannerScreen(
                             text = when {
                                 cameraError != null -> cameraError!!
                                 isCapturing -> "正在保存高质量照片…"
+                                frameQualityMessage != null -> frameQualityMessage!!
                                 detectedToken == null -> "请先让二维码进入框内"
                                 stableFrames < 2 -> "页面正在稳定…"
                                 else -> "可以拍摄"
@@ -281,11 +284,13 @@ fun ScannerScreen(
 private fun CameraSurface(
     lifecycleOwner: androidx.lifecycle.LifecycleOwner,
     onQrDetected: (String) -> Unit,
+    onFrameQuality: (String?) -> Unit,
     onCameraState: (Boolean, String?) -> Unit,
     onControllerReady: (ScannerCameraController) -> Unit,
 ) {
     val context = LocalContext.current
     val latestQr by rememberUpdatedState(onQrDetected)
+    val latestFrameQuality by rememberUpdatedState(onFrameQuality)
     val latestCameraState by rememberUpdatedState(onCameraState)
     val previewView = remember {
         PreviewView(context).apply {
@@ -298,6 +303,7 @@ private fun CameraSurface(
             context = context,
             lifecycleOwner = lifecycleOwner,
             onQrDetected = { latestQr(it) },
+            onFrameQuality = { latestFrameQuality(it) },
             onCameraReady = { ready, error -> latestCameraState(ready, error) },
         )
     }

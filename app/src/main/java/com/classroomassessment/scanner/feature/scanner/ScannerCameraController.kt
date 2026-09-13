@@ -1,6 +1,7 @@
 package com.classroomassessment.scanner.feature.scanner
 
 import android.content.Context
+import android.os.SystemClock
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
@@ -25,6 +26,7 @@ class ScannerCameraController(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner,
     private val onQrDetected: (String) -> Unit,
+    private val onFrameQuality: (String?) -> Unit,
     private val onCameraReady: (Boolean, String?) -> Unit,
 ) {
     private val analysisExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -32,6 +34,7 @@ class ScannerCameraController(
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageCapture: ImageCapture? = null
     private var barcodeScanner: BarcodeScanner? = null
+    private var lastQualityReportAt = 0L
 
     fun bind(previewView: PreviewView) {
         val providerFuture = ProcessCameraProvider.getInstance(context)
@@ -117,6 +120,11 @@ class ScannerCameraController(
             return
         }
         val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastQualityReportAt >= QUALITY_REPORT_INTERVAL_MS) {
+            lastQualityReportAt = now
+            onFrameQuality(assessFrameQuality(imageProxy))
+        }
         scanner.process(image)
             .addOnSuccessListener { barcodes ->
                 barcodes.firstOrNull { it.format == Barcode.FORMAT_QR_CODE }
@@ -128,5 +136,43 @@ class ScannerCameraController(
                 processingFrame.set(false)
                 imageProxy.close()
             }
+    }
+
+    private fun assessFrameQuality(imageProxy: ImageProxy): String? {
+        if (minOf(imageProxy.width, imageProxy.height) < MIN_ANALYSIS_DIMENSION) {
+            return "画面分辨率偏低，请靠近答题卡"
+        }
+        val lumaPlane = imageProxy.planes.firstOrNull() ?: return null
+        val buffer = lumaPlane.buffer
+        val rowStep = maxOf(1, imageProxy.height / LUMA_SAMPLE_ROWS)
+        val columnStep = maxOf(1, imageProxy.width / LUMA_SAMPLE_COLUMNS)
+        var total = 0L
+        var count = 0
+        for (row in 0 until imageProxy.height step rowStep) {
+            val rowOffset = row * lumaPlane.rowStride
+            for (column in 0 until imageProxy.width step columnStep) {
+                val offset = rowOffset + column * lumaPlane.pixelStride
+                if (offset < buffer.limit()) {
+                    total += buffer.get(offset).toInt() and 0xFF
+                    count++
+                }
+            }
+        }
+        if (count == 0) return null
+        val averageLuma = total / count
+        return when {
+            averageLuma < DARK_LUMA_THRESHOLD -> "画面偏暗，请补充光线"
+            averageLuma > BRIGHT_LUMA_THRESHOLD -> "画面偏亮，请避开反光"
+            else -> null
+        }
+    }
+
+    companion object {
+        private const val QUALITY_REPORT_INTERVAL_MS = 500L
+        private const val MIN_ANALYSIS_DIMENSION = 480
+        private const val LUMA_SAMPLE_ROWS = 12
+        private const val LUMA_SAMPLE_COLUMNS = 16
+        private const val DARK_LUMA_THRESHOLD = 25L
+        private const val BRIGHT_LUMA_THRESHOLD = 235L
     }
 }
