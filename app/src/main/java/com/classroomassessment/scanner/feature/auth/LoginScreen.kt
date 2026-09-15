@@ -2,131 +2,135 @@ package com.classroomassessment.scanner.feature.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.classroomassessment.scanner.ui.InlineError
-import com.classroomassessment.scanner.ui.ModeChip
 
 @Composable
 fun LoginScreen(
     isLoading: Boolean,
     errorMessage: String?,
-    isMock: Boolean,
-    onLogin: (String, String) -> Unit,
+    onLogin: (String, String, String) -> Unit,
     onClearError: () -> Unit,
 ) {
-    var username by rememberSaveable { mutableStateOf(if (isMock) "teacher@example.com" else "") }
-    var password by rememberSaveable { mutableStateOf(if (isMock) "demo-password" else "") }
+    var organizationName by rememberSaveable { mutableStateOf("") }
+    var teacherLoginName by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 28.dp, vertical = 36.dp),
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 28.dp),
             verticalArrangement = Arrangement.Center,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                ) {
-                    Icon(
-                        Icons.Rounded.QrCodeScanner,
-                        contentDescription = null,
-                        modifier = Modifier.padding(14.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                Spacer(Modifier.width(14.dp))
-                Column {
-                    Text("课堂扫描器", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                    Text("可靠扫描，课堂不中断", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            Spacer(Modifier.height(28.dp))
-            ModeChip(isMock)
-            Spacer(Modifier.height(24.dp))
-            Text("老师 / 助教登录", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(14.dp))
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("账号") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            )
-            Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("密码") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            )
-            if (errorMessage != null) {
-                Spacer(Modifier.height(14.dp))
-                InlineError(errorMessage, onClearError)
-            }
-            Spacer(Modifier.height(20.dp))
-            Button(
-                onClick = { onLogin(username, password) },
-                enabled = !isLoading && username.isNotBlank() && password.isNotBlank(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
+            Card(
+                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp),
+                shape = RoundedCornerShape(26.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.height(22.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
+                Column(modifier = Modifier.padding(horizontal = 26.dp, vertical = 30.dp)) {
+                    Text(
+                        text = "智慧课堂系统",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
-                } else {
-                    Text("进入课堂", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
-            }
-            if (isMock) {
-                Spacer(Modifier.height(10.dp))
-                TextButton(onClick = { onLogin("teacher@example.com", "demo-password") }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    Text("使用演示账号")
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "课堂扫描工作台",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(28.dp))
+                    OutlinedTextField(
+                        value = organizationName,
+                        onValueChange = { organizationName = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("机构名称") },
+                        placeholder = { Text("请输入机构名称") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                    )
+                    Spacer(Modifier.height(14.dp))
+                    OutlinedTextField(
+                        value = teacherLoginName,
+                        onValueChange = { teacherLoginName = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("老师") },
+                        placeholder = { Text("请输入登录名称") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                    )
+                    Spacer(Modifier.height(14.dp))
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("密码") },
+                        placeholder = { Text("请输入密码") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    )
+                    if (errorMessage != null) {
+                        Spacer(Modifier.height(14.dp))
+                        InlineError(errorMessage, onClearError)
+                    }
+                    Spacer(Modifier.height(22.dp))
+                    Button(
+                        onClick = { onLogin(organizationName, teacherLoginName, password) },
+                        enabled = !isLoading && organizationName.isNotBlank() && teacherLoginName.isNotBlank() && password.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth().height(54.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.height(22.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Text("进入工作台", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                    }
                 }
             }
         }

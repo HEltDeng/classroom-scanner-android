@@ -37,22 +37,20 @@ android {
         applicationId = "com.classroomassessment.scanner"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
         buildConfigField("String", "API_BASE_URL", "\"$escapedApiBaseUrl\"")
-        buildConfigField("boolean", "MOCK_BACKEND_ENABLED", "false")
     }
 
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            buildConfigField("boolean", "MOCK_BACKEND_ENABLED", "true")
         }
         release {
             isMinifyEnabled = true

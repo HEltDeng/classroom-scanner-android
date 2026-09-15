@@ -2,23 +2,28 @@ package com.classroomassessment.scanner.ui
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val ScannerColors = darkColorScheme(
-    primary = Color(0xFFFFB454),
-    onPrimary = Color(0xFF2A1700),
-    secondary = Color(0xFF54D6C7),
-    onSecondary = Color(0xFF00201D),
-    tertiary = Color(0xFFA9C7FF),
-    background = Color(0xFF080E1B),
-    onBackground = Color(0xFFE9EEF8),
-    surface = Color(0xFF101A2B),
-    onSurface = Color(0xFFE9EEF8),
-    surfaceVariant = Color(0xFF253247),
-    onSurfaceVariant = Color(0xFFB8C3D6),
-    error = Color(0xFFFFB4AB),
+private val ScannerColors = lightColorScheme(
+    primary = Color(0xFF0F766E),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFE6F5F1),
+    onPrimaryContainer = Color(0xFF0A5D57),
+    secondary = Color(0xFF0A5D57),
+    onSecondary = Color(0xFFFFFFFF),
+    tertiary = Color(0xFFB57924),
+    onTertiary = Color(0xFFFFFFFF),
+    background = Color(0xFFF4F8F7),
+    onBackground = Color(0xFF18333B),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF18333B),
+    surfaceVariant = Color(0xFFE6F5F1),
+    onSurfaceVariant = Color(0xFF6B8387),
+    outline = Color(0xFFE2ECE9),
+    error = Color(0xFFA54837),
+    onError = Color(0xFFFFFFFF),
 )
 
 @Composable

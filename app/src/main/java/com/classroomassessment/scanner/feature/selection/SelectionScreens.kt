@@ -3,6 +3,7 @@ package com.classroomassessment.scanner.feature.selection
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,9 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.Business
 import androidx.compose.material.icons.rounded.Class
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,46 +31,11 @@ import androidx.compose.ui.unit.dp
 import com.classroomassessment.scanner.core.network.AssessmentSession
 import com.classroomassessment.scanner.core.network.Classroom
 import com.classroomassessment.scanner.core.network.Organization
+import com.classroomassessment.scanner.ui.EmptyState
 import com.classroomassessment.scanner.ui.InfoCard
 import com.classroomassessment.scanner.ui.InlineError
 import com.classroomassessment.scanner.ui.PrimaryAction
 import com.classroomassessment.scanner.ui.ScreenHeader
-
-@Composable
-fun OrganizationSelectScreen(
-    organizations: List<Organization>,
-    isLoading: Boolean,
-    errorMessage: String?,
-    onSelect: (Organization) -> Unit,
-    onClearError: () -> Unit,
-) {
-    Scaffold { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            ScreenHeader("选择机构", "当前账号可访问的机构")
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-            }
-            if (errorMessage != null) {
-                InlineError(errorMessage, onClearError)
-                Spacer(Modifier.height(12.dp))
-            }
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(organizations, key = { it.id }) { organization ->
-                    SelectableRow(
-                        title = organization.name,
-                        subtitle = "机构",
-                        icon = Icons.Rounded.Business,
-                        onClick = { onSelect(organization) },
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun ClassSelectScreen(
@@ -97,18 +61,24 @@ fun ClassSelectScreen(
                 InlineError(errorMessage, onClearError)
                 Spacer(Modifier.height(12.dp))
             }
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(classes, key = { it.id }) { classroom ->
-                    SelectableRow(
-                        title = classroom.name,
-                        subtitle = "进入后选择 ACTIVE 课堂",
-                        icon = Icons.Rounded.Class,
-                        onClick = { onSelect(classroom) },
-                    )
+            if (!isLoading && classes.isEmpty() && errorMessage == null) {
+                EmptyState(
+                    title = "暂无可访问班级",
+                    body = "当前账号还没有可进入的班级。",
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(classes, key = { it.id }) { classroom ->
+                        SelectableRow(
+                            title = classroom.name,
+                            icon = Icons.Rounded.Class,
+                            onClick = { onSelect(classroom) },
+                        )
+                    }
                 }
             }
         }
@@ -123,20 +93,20 @@ fun SessionSelectScreen(
     errorMessage: String?,
     onBack: () -> Unit,
     onSelect: (AssessmentSession) -> Unit,
-    onOpenSettings: () -> Unit,
     onClearError: () -> Unit,
 ) {
     Scaffold { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             ScreenHeader(
-                title = "选择课堂",
+                title = "选择测试",
                 subtitle = classroom?.name,
                 onBack = onBack,
-                trailing = {
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Rounded.Settings, contentDescription = "设置")
-                    }
-                },
+            )
+            Text(
+                text = "进行中的测试",
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
             )
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -145,27 +115,37 @@ fun SessionSelectScreen(
                 InlineError(errorMessage, onClearError)
                 Spacer(Modifier.height(12.dp))
             }
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                items(sessions, key = { it.id }) { session ->
-                    InfoCard {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(session.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                                Spacer(Modifier.height(6.dp))
-                                Text("ACTIVE · ${session.questionCount} 题", color = MaterialTheme.colorScheme.secondary)
+            if (!isLoading && sessions.isEmpty() && errorMessage == null) {
+                EmptyState(
+                    title = "暂无进行中的测试",
+                    body = "请先在 Web 工作台创建并开始一场测试。",
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    items(sessions, key = { it.id }) { session ->
+                        InfoCard {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(session.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(
+                                        "${session.questionCount} 道题 · 已提交 ${session.submittedCount} / ${session.participantCount}",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                IconButton(onClick = { onSelect(session) }) {
+                                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "开始扫描", tint = MaterialTheme.colorScheme.primary)
+                                }
                             }
-                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.height(14.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                            Spacer(Modifier.height(12.dp))
+                            PrimaryAction("开始扫描", onClick = { onSelect(session) }, modifier = Modifier.fillMaxWidth())
                         }
-                        Spacer(Modifier.height(14.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
-                        Spacer(Modifier.height(12.dp))
-                        Text("已提交 ${session.submittedCount} / ${session.participantCount}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(12.dp))
-                        PrimaryAction("开始扫描", onClick = { onSelect(session) }, modifier = Modifier.fillMaxWidth())
                     }
                 }
             }
@@ -176,20 +156,15 @@ fun SessionSelectScreen(
 @Composable
 private fun SelectableRow(
     title: String,
-    subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
 ) {
     InfoCard(modifier = Modifier.clickable(onClick = onClick)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(4.dp))
-                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "进入", tint = MaterialTheme.colorScheme.primary)
         }
     }
 }

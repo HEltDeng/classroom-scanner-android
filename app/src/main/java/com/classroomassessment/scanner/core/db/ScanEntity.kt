@@ -19,6 +19,8 @@ data class ScanEntity(
     val localCaptureId: String,
     @ColumnInfo(name = "session_id")
     val sessionId: String,
+    @ColumnInfo(name = "scan_session_id")
+    val scanSessionId: String? = null,
     @ColumnInfo(name = "page_token")
     val pageToken: String,
     @ColumnInfo(name = "image_path")

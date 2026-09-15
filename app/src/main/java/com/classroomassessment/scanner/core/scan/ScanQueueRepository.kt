@@ -15,10 +15,11 @@ class ScanQueueRepository(
 
     fun observeAll(): Flow<List<ScanEntity>> = dao.observeAll()
 
-    suspend fun enqueueCapture(sessionId: String, pageToken: String, plan: CapturePlan): ScanEntity {
+    suspend fun enqueueCapture(sessionId: String, scanSessionId: String, pageToken: String, plan: CapturePlan): ScanEntity {
         val local = ScanEntity(
             localCaptureId = plan.localCaptureId,
             sessionId = sessionId,
+            scanSessionId = scanSessionId,
             pageToken = pageToken,
             imagePath = plan.file.absolutePath,
             capturedAt = System.currentTimeMillis(),

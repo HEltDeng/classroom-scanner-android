@@ -33,11 +33,17 @@ class UploadWorker(
             markFailed(current, "本地照片不存在，请重新扫描")
             return@withContext Result.failure(workDataOf(KEY_ERROR to "image_missing"))
         }
+        val scanSessionId = current.scanSessionId
+        if (scanSessionId.isNullOrBlank()) {
+            markFailed(current, "扫描会话已失效，请重新进入测试后重试")
+            return@withContext Result.failure(workDataOf(KEY_ERROR to "scan_session_missing"))
+        }
 
         container.database.scanDao().update(current.copy(uploadStatus = ScanStatus.UPLOADING.name, lastError = null))
         return@withContext try {
             val result = container.backend.uploadScan(
                 sessionId = current.sessionId,
+                scanSessionId = scanSessionId,
                 pageToken = current.pageToken,
                 clientCaptureId = current.localCaptureId,
                 image = image,

@@ -13,9 +13,11 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 
 interface TokenStore {
-    fun save(accessToken: String, refreshToken: String?)
+    fun save(accessToken: String, refreshToken: String?, account: Account? = null)
+    fun saveIdentity(account: Account)
     fun accessToken(): String?
     fun refreshToken(): String?
+    fun account(): Account?
     fun clear()
 }
 
@@ -24,18 +26,51 @@ class EncryptedTokenStore(context: Context) : TokenStore {
     private val preferences = context.getSharedPreferences("secure_session", Context.MODE_PRIVATE)
     private val keyAlias = "classroom_scanner_session_key"
 
-    override fun save(accessToken: String, refreshToken: String?) {
-        preferences.edit()
+    override fun save(accessToken: String, refreshToken: String?, account: Account?) {
+        val editor = preferences.edit()
             .putString(ACCESS_TOKEN, encrypt(accessToken))
             .putString(REFRESH_TOKEN, refreshToken?.let(::encrypt))
-            .apply()
+        if (account != null) writeIdentity(editor, account)
+        editor.apply()
+    }
+
+    override fun saveIdentity(account: Account) {
+        writeIdentity(preferences.edit(), account).apply()
     }
 
     override fun accessToken(): String? = preferences.getString(ACCESS_TOKEN, null)?.let(::decrypt)
 
     override fun refreshToken(): String? = preferences.getString(REFRESH_TOKEN, null)?.let(::decrypt)
 
+    override fun account(): Account? = runCatching {
+        Account(
+            id = decryptRequired(USER_ID),
+            displayName = decryptRequired(DISPLAY_NAME),
+            email = decryptRequired(EMAIL),
+            organizationId = decryptRequired(ORGANIZATION_ID),
+            organizationName = decryptRequired(ORGANIZATION_NAME),
+            teacherId = decryptRequired(TEACHER_ID),
+            teacherName = decryptRequired(TEACHER_NAME),
+            loginName = decryptRequired(LOGIN_NAME),
+            role = decryptRequired(ROLE),
+        )
+    }.getOrNull()
+
     override fun clear() = preferences.edit().clear().apply()
+
+    private fun writeIdentity(editor: android.content.SharedPreferences.Editor, account: Account): android.content.SharedPreferences.Editor = editor
+        .putString(USER_ID, encrypt(account.id))
+        .putString(DISPLAY_NAME, encrypt(account.displayName))
+        .putString(EMAIL, encrypt(account.email))
+        .putString(ORGANIZATION_ID, encrypt(account.organizationId))
+        .putString(ORGANIZATION_NAME, encrypt(account.organizationName))
+        .putString(TEACHER_ID, encrypt(account.teacherId))
+        .putString(TEACHER_NAME, encrypt(account.teacherName))
+        .putString(LOGIN_NAME, encrypt(account.loginName))
+        .putString(ROLE, encrypt(account.role))
+
+    private fun decryptRequired(key: String): String = preferences.getString(key, null)?.let(::decrypt)
+        ?: error("Missing session identity")
 
     private fun encrypt(value: String): String {
         val cipher = Cipher.getInstance(TRANSFORMATION)
@@ -79,6 +114,15 @@ class EncryptedTokenStore(context: Context) : TokenStore {
     private companion object {
         const val ACCESS_TOKEN = "access_token"
         const val REFRESH_TOKEN = "refresh_token"
+        const val USER_ID = "user_id"
+        const val DISPLAY_NAME = "display_name"
+        const val EMAIL = "email"
+        const val ORGANIZATION_ID = "organization_id"
+        const val ORGANIZATION_NAME = "organization_name"
+        const val TEACHER_ID = "teacher_id"
+        const val TEACHER_NAME = "teacher_name"
+        const val LOGIN_NAME = "login_name"
+        const val ROLE = "role"
         const val ANDROID_KEYSTORE = "AndroidKeyStore"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
     }

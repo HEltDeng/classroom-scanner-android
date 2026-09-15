@@ -59,7 +59,7 @@ try {
     }
     $releaseDirectory = Join-Path $ProjectRoot "release"
     New-Item -ItemType Directory -Path $releaseDirectory -Force | Out-Null
-    $artifactStem = "classroom-scanner-android-v0.1.0-code1-release"
+    $artifactStem = "classroom-scanner-android-v0.2.0-code2-release"
     $apkDestination = Join-Path $releaseDirectory ($artifactStem + ".apk")
     Copy-Item -LiteralPath $apkSource -Destination $apkDestination -Force
     $mappingSource = Join-Path $ProjectRoot "app\build\outputs\mapping\release\mapping.txt"
@@ -71,19 +71,19 @@ try {
     [IO.File]::WriteAllText((Join-Path $releaseDirectory ($artifactStem + ".sha256")), "$apkHash  $([IO.Path]::GetFileName($apkDestination))$([Environment]::NewLine)")
     [IO.File]::WriteAllText((Join-Path $releaseDirectory ($artifactStem + "-release-notes.txt")), @"
 Classroom Scanner Android internal release
-versionName: 0.1.0
-versionCode: 1
+versionName: 0.2.0
+versionCode: 2
 applicationId: com.classroomassessment.scanner
 APK: $([IO.Path]::GetFileName($apkDestination))
 APK SHA-256: $apkHash
 Signing: project-specific release keystore; certificate digest is verified separately.
-Scope: CameraX Preview/ImageAnalysis/ImageCapture, bundled ML Kit QR, Room queue, WorkManager upload, Mock provider.
+Scope: shared teacher login, Backend class/test discovery, CameraX Preview/ImageAnalysis/ImageCapture, bundled ML Kit QR, Room queue, WorkManager upload.
 "@.TrimStart())
     [IO.File]::WriteAllText((Join-Path $releaseDirectory ($artifactStem + "-version.json")), @"
 {
   "applicationId": "com.classroomassessment.scanner",
-  "versionName": "0.1.0",
-  "versionCode": 1,
+  "versionName": "0.2.0",
+  "versionCode": 2,
   "apk": "$([IO.Path]::GetFileName($apkDestination))",
   "sha256": "$apkHash"
 }

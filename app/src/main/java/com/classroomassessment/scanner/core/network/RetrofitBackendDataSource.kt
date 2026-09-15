@@ -46,18 +46,24 @@ class RetrofitBackendDataSource(
     private val scanService = retrofit.create(RetrofitScanService::class.java)
     private val versionService = retrofit.create(RetrofitVersionService::class.java)
 
-    override suspend fun login(username: String, password: String): LoginResponseDto =
-        authService.login(LoginRequest(username, password))
+    override suspend fun login(organizationName: String, teacherLoginName: String, password: String): LoginResponseDto =
+        authService.login(LoginRequest(organizationName, teacherLoginName, password))
+
+    override suspend fun getMe(): MeResponseDto = authService.getMe()
 
     override suspend fun getOrganizations(): List<OrganizationDto> = organizationService.getOrganizations()
 
-    override suspend fun getClasses(organizationId: String): List<ClassroomDto> = classService.getClasses(organizationId)
+    override suspend fun getClasses(): List<ClassroomDto> = classService.getClasses()
 
     override suspend fun getActiveSessions(classId: String): List<AssessmentSessionDto> =
         sessionService.getActiveSessions(classId, "ACTIVE")
 
+    override suspend fun createOrGetScannerSession(sessionId: String): ScannerSessionDto =
+        sessionService.createOrGetScannerSession(sessionId)
+
     override suspend fun uploadScan(
         sessionId: String,
+        scanSessionId: String,
         pageToken: String,
         clientCaptureId: String,
         image: File,
@@ -69,6 +75,7 @@ class RetrofitBackendDataSource(
         )
         return scanService.uploadScan(
             sessionId = sessionId.asTextPart(),
+            scanSessionId = scanSessionId.asTextPart(),
             pageToken = pageToken.asTextPart(),
             clientCaptureId = clientCaptureId.asTextPart(),
             image = imagePart,
@@ -109,6 +116,9 @@ private class RequestIdInterceptor : Interceptor {
 private interface RetrofitAuthService {
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponseDto
+
+    @GET("me")
+    suspend fun getMe(): MeResponseDto
 }
 
 private interface RetrofitOrganizationService {
@@ -117,16 +127,19 @@ private interface RetrofitOrganizationService {
 }
 
 private interface RetrofitClassService {
-    @GET("organizations/{organizationId}/classes")
-    suspend fun getClasses(@Path("organizationId") organizationId: String): List<ClassroomDto>
+    @GET("classes")
+    suspend fun getClasses(): List<ClassroomDto>
 }
 
 private interface RetrofitSessionService {
-    @GET("classes/{classId}/assessment-sessions")
+    @GET("classes/{classId}/sessions")
     suspend fun getActiveSessions(
         @Path("classId") classId: String,
         @Query("status") status: String,
     ): List<AssessmentSessionDto>
+
+    @POST("sessions/{sessionId}/scan-session")
+    suspend fun createOrGetScannerSession(@Path("sessionId") sessionId: String): ScannerSessionDto
 }
 
 private interface RetrofitScanService {
@@ -134,6 +147,7 @@ private interface RetrofitScanService {
     @POST("scans")
     suspend fun uploadScan(
         @Part("session_id") sessionId: okhttp3.RequestBody,
+        @Part("scan_session_id") scanSessionId: okhttp3.RequestBody,
         @Part("page_token") pageToken: okhttp3.RequestBody,
         @Part("client_capture_id") clientCaptureId: okhttp3.RequestBody,
         @Part image: MultipartBody.Part,

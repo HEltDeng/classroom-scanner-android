@@ -6,14 +6,14 @@
 
 - Project: `D:\Codex\classroom-scanner-android`
 - Application ID: `com.classroomassessment.scanner`
-- Version: `0.1.0` / versionCode `1`
+- Version: `0.2.0` / versionCode `2`
 - UI: Kotlin + Jetpack Compose
 - Camera: CameraX Preview + ImageAnalysis + ImageCapture
 - QR: bundled ML Kit Barcode Scanning, restricted to `QR_CODE`
 - Persistence: Room
 - Upload scheduling: WorkManager with network constraint and exponential retry
 - Network: Retrofit + OkHttp + Kotlin Coroutines
-- Development: debug uses deterministic Mock Backend; release uses the API adapter
+- Account and data: debug and release both use the same Backend API adapter; no embedded demo account or local business data
 
 The application ID is frozen once the first signed release APK is produced. The actual Backend URL is injected at build time with `CLASSROOM_SCANNER_API_BASE_URL`; the source fallback is intentionally non-routable until the Backend contract is ready.
 
@@ -27,7 +27,7 @@ $env:ANDROID_HOME = "D:\Codex\90_Shared-公共资源\toolchains\android-sdk"
 .\gradlew.bat testDebugUnitTest assembleDebug
 ```
 
-The Debug APK is `app\build\outputs\apk\debug\app-debug.apk`. It uses the `.debug` application ID suffix and Mock mode.
+The Debug APK is `app\build\outputs\apk\debug\app-debug.apk`. It uses the `.debug` application ID suffix and the same tenant-scoped Backend contract as release. Supply `CLASSROOM_SCANNER_API_BASE_URL` when building against a reachable Backend.
 
 ## Signing
 
@@ -41,15 +41,15 @@ For an already-created identity, use `Register-ClassroomScannerSigning.ps1` inst
 
 ```powershell
 .\scripts\Invoke-ClassroomScannerReleaseBuild.ps1
-.\scripts\Verify-ClassroomScannerRelease.ps1 -ApkPath ".\release\classroom-scanner-android-v0.1.0-code1-release.apk"
+.\scripts\Verify-ClassroomScannerRelease.ps1 -ApkPath ".\release\classroom-scanner-android-v0.2.0-code2-release.apk"
 ```
 
 Do not commit the JKS, passwords, the DPAPI XML, temporary signing properties, or local scan images. A secondary protected copy on another fixed volume is not the same as a disconnected offline backup; the latter must be made and verified before broader distribution.
 
-## Mock flow
+## Product flow
 
-Debug login accepts any non-empty credentials. It provides one organization, two classes, active sessions, deterministic scan results, an idempotent upload provider, and a development-only “加入演示扫描（仅 Mock）” action for queue/retry/restart verification. A token containing `REVIEW` returns `REVIEW_REQUIRED`.
+The scanner uses the same tenant account as the Web workspace: organization name, teacher login name, and password. After login it loads the teacher's accessible classes, loads the active tests created in the Web workspace, opens a Backend scanner session, and uploads CameraX JPEG captures with a stable `client_capture_id`. No class, test, student, scan result, or account is created locally.
 
 ## Handoff
 
-The provisional mobile API, request/response schemas, idempotency rule, local state machine, and version endpoint are in [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md). The evidence boundary and real-device cases are in [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md).
+The Android-facing API, request/response schemas, idempotency rule, local state machine, and version endpoint are in [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md). The technical-check boundary and real-device cases are in [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md).
