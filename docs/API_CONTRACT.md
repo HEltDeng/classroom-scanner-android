@@ -4,6 +4,22 @@ This contract is implemented by the Main Backend in the companion Web/Backend re
 
 The base URL is supplied at build time with `CLASSROOM_SCANNER_API_BASE_URL`. The source fallback is deliberately non-routable and must not be used for a real installation.
 
+## Runtime request map
+
+The current Android client uses the following relative paths. With the internal release base URL `https://assessment.mychangliapp.cn/api/v1/`, these become the exact requests below; every request after login carries the same Backend bearer token.
+
+| Flow step | Method | Request path |
+| --- | --- | --- |
+| Login | `POST` | `/api/v1/auth/login` |
+| Restore/check teacher identity | `GET` | `/api/v1/me` |
+| Load teacher-accessible classes | `GET` | `/api/v1/classes` |
+| Load Web-created scannable tests | `GET` | `/api/v1/classes/{class_id}/sessions?status=ACTIVE` |
+| Open/get teacher scan session | `POST` | `/api/v1/sessions/{session_id}/scan-session` |
+| Upload captured answer sheet | `POST` | `/api/v1/scans` |
+| Refresh recognition status | `GET` | `/api/v1/scans/{server_scan_id}` |
+
+The Android client does not call the historical `/organizations/{organization_id}/classes` or `/classes/{class_id}/assessment-sessions` paths. Classes and tests are never supplied by a local fallback.
+
 ## Authentication and tenant context
 
 `POST /api/v1/auth/login`
@@ -143,8 +159,8 @@ Android only renders and persists these states. OMR, OCR, answer scoring, and id
 
 ```json
 {
-  "latest_version_code":2,
-  "latest_version_name":"0.2.0",
+  "latest_version_code":3,
+  "latest_version_name":"0.2.1",
   "apk_url":"https://download.example.org/classroom-scanner.apk",
   "force_update":false,
   "release_notes":"...",

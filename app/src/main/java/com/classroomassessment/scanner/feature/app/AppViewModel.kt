@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 
 enum class AppScreen {
     SPLASH,
@@ -73,7 +75,20 @@ class AppViewModel(
                 .onSuccess(::loadWorkspace)
                 .onFailure { error ->
                     _uiState.update {
-                        it.copy(isLoading = false, errorMessage = error.message ?: "登录失败，请稍后重试")
+                        it.copy(
+                            isLoading = false,
+                            account = null,
+                            classes = emptyList(),
+                            sessions = emptyList(),
+                            selectedClass = null,
+                            selectedSession = null,
+                            scannerSession = null,
+                            errorMessage = userFacingError(
+                                error = error,
+                                fallback = "登录失败，请稍后重试",
+                                unauthorizedMessage = "机构名称、老师或密码不正确",
+                            ),
+                        )
                     }
                 }
         }
@@ -102,7 +117,15 @@ class AppViewModel(
                     }
                 }
                 .onFailure { error ->
-                    _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "测试加载失败") }
+                    if (handleUnauthorized(error)) return@onFailure
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            screen = AppScreen.CLASS_SELECT,
+                            sessions = emptyList(),
+                            errorMessage = userFacingError(error, "测试加载失败"),
+                        )
+                    }
                 }
         }
     }
@@ -129,11 +152,12 @@ class AppViewModel(
                     }
                 }
                 .onFailure { error ->
+                    if (handleUnauthorized(error)) return@onFailure
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             screen = AppScreen.SESSION_SELECT,
-                            errorMessage = error.message ?: "无法打开扫描会话",
+                            errorMessage = userFacingError(error, "无法打开扫描会话"),
                         )
                     }
                 }
@@ -148,6 +172,11 @@ class AppViewModel(
         it.copy(screen = AppScreen.SESSION_SELECT, scannerSession = null, errorMessage = null)
     }
 
+    fun reloadClasses() {
+        if (_uiState.value.isLoading) return
+        _uiState.value.account?.let(::loadWorkspace)
+    }
+
     fun signOut() {
         backend.signOut()
         _uiState.value = AppUiState(screen = AppScreen.LOGIN)
@@ -160,15 +189,23 @@ class AppViewModel(
             val organization = Organization(account.organizationId, account.organizationName)
             _uiState.update {
                 it.copy(
+                    screen = AppScreen.CLASS_SELECT,
                     isLoading = true,
                     account = account,
                     selectedOrganization = organization,
+                    classes = emptyList(),
+                    sessions = emptyList(),
+                    selectedClass = null,
+                    selectedSession = null,
+                    scannerSession = null,
                     errorMessage = null,
                 )
             }
             runCatching { backend.classes() }
                 .onSuccess { classes ->
-                    val activeClasses = classes.filter { it.status.equals("ACTIVE", ignoreCase = true) }
+                    val activeClasses = classes.filter {
+                        it.organizationId == account.organizationId && it.status.equals("ACTIVE", ignoreCase = true)
+                    }
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -179,9 +216,47 @@ class AppViewModel(
                     }
                 }
                 .onFailure { error ->
-                    _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "班级加载失败") }
+                    if (handleUnauthorized(error)) return@onFailure
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            screen = AppScreen.CLASS_SELECT,
+                            classes = emptyList(),
+                            sessions = emptyList(),
+                            selectedClass = null,
+                            selectedSession = null,
+                            scannerSession = null,
+                            errorMessage = userFacingError(error, "班级加载失败"),
+                        )
+                    }
                 }
         }
+    }
+
+    private fun userFacingError(
+        error: Throwable,
+        fallback: String,
+        unauthorizedMessage: String = "登录已失效，请重新登录",
+    ): String = when (error) {
+        is HttpException -> when (error.code()) {
+            401 -> unauthorizedMessage
+            403 -> "当前账号没有访问权限"
+            404 -> "加载失败，请重试"
+            in 500..599 -> "服务暂不可用，请稍后重试"
+            else -> fallback
+        }
+        is IOException -> "网络无法连接，请检查网络后重试"
+        else -> fallback
+    }
+
+    private fun handleUnauthorized(error: Throwable): Boolean {
+        if (error !is HttpException || error.code() != 401) return false
+        backend.signOut()
+        _uiState.value = AppUiState(
+            screen = AppScreen.LOGIN,
+            errorMessage = "登录已失效，请重新登录",
+        )
+        return true
     }
 
     class Factory(private val backend: BackendRepository) : ViewModelProvider.Factory {

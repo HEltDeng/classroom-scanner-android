@@ -6,7 +6,7 @@
 
 - Project: `D:\Codex\classroom-scanner-android`
 - Application ID: `com.classroomassessment.scanner`
-- Version: `0.2.0` / versionCode `2`
+- Version: `0.2.1` / versionCode `3`
 - UI: Kotlin + Jetpack Compose
 - Camera: CameraX Preview + ImageAnalysis + ImageCapture
 - QR: bundled ML Kit Barcode Scanning, restricted to `QR_CODE`
@@ -41,7 +41,7 @@ For an already-created identity, use `Register-ClassroomScannerSigning.ps1` inst
 
 ```powershell
 .\scripts\Invoke-ClassroomScannerReleaseBuild.ps1
-.\scripts\Verify-ClassroomScannerRelease.ps1 -ApkPath ".\release\classroom-scanner-android-v0.2.0-code2-release.apk"
+.\scripts\Verify-ClassroomScannerRelease.ps1 -ApkPath ".\release\classroom-scanner-android-v0.2.1-code3-release.apk"
 ```
 
 Do not commit the JKS, passwords, the DPAPI XML, temporary signing properties, or local scan images. A secondary protected copy on another fixed volume is not the same as a disconnected offline backup; the latter must be made and verified before broader distribution.

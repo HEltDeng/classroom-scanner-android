@@ -23,8 +23,6 @@ class BackendRepository(
 
     fun hasSession(): Boolean = !tokenStore.accessToken().isNullOrBlank()
 
-    suspend fun organizations(): List<Organization> = dataSource.getOrganizations().map { Organization(it.id, it.name) }
-
     suspend fun classes(): List<Classroom> = dataSource.getClasses().map {
         Classroom(it.id, it.organizationId, it.name, it.status)
     }

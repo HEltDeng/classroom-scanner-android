@@ -44,12 +44,14 @@ fun ClassroomScannerApp(container: AppContainer) {
                 onClearError = viewModel::clearError,
             )
             AppScreen.CLASS_SELECT -> ClassSelectScreen(
+                teacherName = state.account?.teacherName,
                 organization = state.selectedOrganization,
                 classes = state.classes,
                 isLoading = state.isLoading,
                 errorMessage = state.errorMessage,
                 onBack = null,
                 onSelect = viewModel::selectClass,
+                onRetry = viewModel::reloadClasses,
                 onClearError = viewModel::clearError,
             )
             AppScreen.SESSION_SELECT -> SessionSelectScreen(

@@ -40,7 +40,6 @@ class RetrofitBackendDataSource(
         .build()
 
     private val authService = retrofit.create(RetrofitAuthService::class.java)
-    private val organizationService = retrofit.create(RetrofitOrganizationService::class.java)
     private val classService = retrofit.create(RetrofitClassService::class.java)
     private val sessionService = retrofit.create(RetrofitSessionService::class.java)
     private val scanService = retrofit.create(RetrofitScanService::class.java)
@@ -50,8 +49,6 @@ class RetrofitBackendDataSource(
         authService.login(LoginRequest(organizationName, teacherLoginName, password))
 
     override suspend fun getMe(): MeResponseDto = authService.getMe()
-
-    override suspend fun getOrganizations(): List<OrganizationDto> = organizationService.getOrganizations()
 
     override suspend fun getClasses(): List<ClassroomDto> = classService.getClasses()
 
@@ -119,11 +116,6 @@ private interface RetrofitAuthService {
 
     @GET("me")
     suspend fun getMe(): MeResponseDto
-}
-
-private interface RetrofitOrganizationService {
-    @GET("organizations")
-    suspend fun getOrganizations(): List<OrganizationDto>
 }
 
 private interface RetrofitClassService {

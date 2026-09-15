@@ -7,10 +7,6 @@ interface AuthApi {
     suspend fun getMe(): MeResponseDto
 }
 
-interface OrganizationApi {
-    suspend fun getOrganizations(): List<OrganizationDto>
-}
-
 interface ClassApi {
     suspend fun getClasses(): List<ClassroomDto>
 }
@@ -36,4 +32,4 @@ interface VersionApi {
     suspend fun getLatestVersion(): VersionResponseDto
 }
 
-interface BackendDataSource : AuthApi, OrganizationApi, ClassApi, SessionApi, ScanApi, VersionApi
+interface BackendDataSource : AuthApi, ClassApi, SessionApi, ScanApi, VersionApi

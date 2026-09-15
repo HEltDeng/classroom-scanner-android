@@ -35,38 +35,63 @@ import com.classroomassessment.scanner.ui.EmptyState
 import com.classroomassessment.scanner.ui.InfoCard
 import com.classroomassessment.scanner.ui.InlineError
 import com.classroomassessment.scanner.ui.PrimaryAction
+import com.classroomassessment.scanner.ui.SecondaryAction
 import com.classroomassessment.scanner.ui.ScreenHeader
 
 @Composable
 fun ClassSelectScreen(
+    teacherName: String?,
     organization: Organization?,
     classes: List<Classroom>,
     isLoading: Boolean,
     errorMessage: String?,
     onBack: (() -> Unit)?,
     onSelect: (Classroom) -> Unit,
+    onRetry: () -> Unit,
     onClearError: () -> Unit,
 ) {
     Scaffold { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             ScreenHeader(
                 title = "选择班级",
-                subtitle = organization?.name,
                 onBack = onBack,
             )
+            teacherName?.takeIf(String::isNotBlank)?.let { currentTeacher ->
+                Text(
+                    text = currentTeacher,
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            organization?.name?.takeIf(String::isNotBlank)?.let { organizationName ->
+                Text(
+                    text = organizationName,
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             }
             if (errorMessage != null) {
                 InlineError(errorMessage, onClearError)
                 Spacer(Modifier.height(12.dp))
+                if (!isLoading && classes.isEmpty()) {
+                    SecondaryAction(
+                        text = "重新加载",
+                        onClick = onRetry,
+                        modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(),
+                    )
+                }
             }
             if (!isLoading && classes.isEmpty() && errorMessage == null) {
                 EmptyState(
                     title = "暂无可访问班级",
                     body = "当前账号还没有可进入的班级。",
                 )
-            } else {
+            } else if (classes.isNotEmpty()) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
@@ -103,7 +128,7 @@ fun SessionSelectScreen(
                 onBack = onBack,
             )
             Text(
-                text = "进行中的测试",
+                text = "可扫描测试",
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
@@ -117,10 +142,10 @@ fun SessionSelectScreen(
             }
             if (!isLoading && sessions.isEmpty() && errorMessage == null) {
                 EmptyState(
-                    title = "暂无进行中的测试",
-                    body = "请先在 Web 工作台创建并开始一场测试。",
+                    title = "暂无可扫描测试",
+                    body = "请先在 Web 工作台创建并发布一场可扫描测试。",
                 )
-            } else {
+            } else if (sessions.isNotEmpty()) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
