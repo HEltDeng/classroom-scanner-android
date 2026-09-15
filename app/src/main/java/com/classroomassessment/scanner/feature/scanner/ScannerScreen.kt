@@ -31,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -101,6 +102,7 @@ fun ScannerScreen(
     val pendingCount = parsedStatuses.count { it.isPendingUpload() }
     val processingCount = parsedStatuses.count { it == ScanStatus.UPLOADED || it == ScanStatus.PROCESSING }
     val reviewCount = parsedStatuses.count { it == ScanStatus.REVIEW_REQUIRED || it == ScanStatus.FAILED }
+    val failedCount = parsedStatuses.count { it == ScanStatus.FAILED }
     val frameColor = if (stableFrames >= 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.82f)
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -247,6 +249,20 @@ fun ScannerScreen(
                     SummaryItem("待上传", pendingCount.toString(), Modifier.weight(1f))
                     SummaryItem("处理中", processingCount.toString(), Modifier.weight(1f))
                     SummaryItem("异常", reviewCount.toString(), Modifier.weight(1f))
+                }
+                if (failedCount > 0) {
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                queue.filter { it.uploadStatus == ScanStatus.FAILED.name }
+                                    .forEach { queueRepository.retry(it.localCaptureId) }
+                                feedback = "已重新加入上传队列"
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.End),
+                    ) {
+                        Text("上传失败 $failedCount 张，点击重试")
+                    }
                 }
                 if (feedback != null) {
                     Spacer(Modifier.height(8.dp))
