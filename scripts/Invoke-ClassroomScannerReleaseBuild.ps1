@@ -59,8 +59,8 @@ try {
     }
     $releaseDirectory = Join-Path $ProjectRoot "release"
     New-Item -ItemType Directory -Path $releaseDirectory -Force | Out-Null
-    $artifactVersionName = "0.2.1"
-    $artifactVersionCode = 3
+    $artifactVersionName = "0.2.2"
+    $artifactVersionCode = 4
     $artifactStem = "classroom-scanner-android-v$artifactVersionName-code$artifactVersionCode-release"
     $apkDestination = Join-Path $releaseDirectory ($artifactStem + ".apk")
     Copy-Item -LiteralPath $apkSource -Destination $apkDestination -Force

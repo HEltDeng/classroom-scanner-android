@@ -2,6 +2,7 @@ package com.classroomassessment.scanner.feature.scanner
 
 import android.content.Context
 import android.os.SystemClock
+import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
@@ -72,6 +73,7 @@ class ScannerCameraController(
                     )
                     onCameraReady(true, null)
                 }.onFailure { error ->
+                    Log.e(TAG, "CameraX binding failed", error)
                     onCameraReady(false, "无法启动相机，请检查权限或设备相机状态")
                 }
             },
@@ -168,6 +170,7 @@ class ScannerCameraController(
     }
 
     companion object {
+        private const val TAG = "ClassroomScannerCamera"
         private const val QUALITY_REPORT_INTERVAL_MS = 500L
         private const val MIN_ANALYSIS_DIMENSION = 480
         private const val LUMA_SAMPLE_ROWS = 12

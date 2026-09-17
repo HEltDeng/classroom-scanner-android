@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -48,8 +48,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.view.doOnAttach
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
@@ -106,38 +108,18 @@ fun ScannerScreen(
     val frameColor = if (stableFrames >= 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.82f)
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        if (hasCameraPermission) {
-            CameraSurface(
-                lifecycleOwner = lifecycleOwner,
-                onQrDetected = { token ->
-                    if (token == detectedToken) {
-                        stableFrames = (stableFrames + 1).coerceAtMost(3)
-                    } else {
-                        detectedToken = token
-                        stableFrames = 1
-                    }
-                },
-                onCameraState = { ready, error ->
-                    cameraReady = ready
-                    cameraError = error
-                },
-                onFrameQuality = { frameQualityMessage = it },
-                onControllerReady = { cameraController = it },
-            )
-        } else {
+        if (!hasCameraPermission) {
             PermissionPanel(onRequest = { permissionLauncher.launch(Manifest.permission.CAMERA) })
-        }
-
-        if (hasCameraPermission) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.TopCenter)
-                    .systemBarsPadding()
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.93f))
-                    .padding(horizontal = 8.dp, vertical = 5.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+        } else {
+            Column(Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .statusBarsPadding()
+                        .padding(horizontal = 8.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "返回", tint = MaterialTheme.colorScheme.onSurface)
                     }
@@ -146,127 +128,161 @@ fun ScannerScreen(
                         Text(session.name, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     }
                 }
-            }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(start = 16.dp, end = 16.dp, top = 78.dp, bottom = 194.dp)
-                    .border(3.dp, frameColor, RoundedCornerShape(22.dp)),
-            ) {
-                Text(
-                    text = if (detectedToken == null) "将答题卡放入画面" else "页面已识别，画面稳定后拍摄",
+                Box(
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 14.dp, vertical = 16.dp),
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f))
-                    .navigationBarsPadding()
-                    .padding(horizontal = 18.dp, vertical = 14.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            text = when {
-                                cameraError != null -> cameraError!!
-                                isCapturing -> "正在保存高质量照片…"
-                                frameQualityMessage != null -> frameQualityMessage!!
-                                detectedToken == null -> "将答题卡放入画面"
-                                stableFrames < 2 -> "页面正在稳定…"
-                                else -> "可以拍摄"
-                            },
-                            color = if (cameraError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        if (detectedToken != null) {
-                            Text(
-                                "页面 ${displayToken(detectedToken!!)}",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                    Button(
-                        onClick = {
-                            val pageToken = detectedToken ?: return@Button
-                            val controller = cameraController ?: return@Button
-                            val plan = queueRepository.newCapturePlan()
-                            isCapturing = true
-                            feedback = null
-                            controller.capture(
-                                plan = plan,
-                                onSaved = { savedPlan ->
-                                    scope.launch {
-                                        runCatching {
-                                            queueRepository.enqueueCapture(session.id, scannerSession.id, pageToken, savedPlan)
-                                        }.onSuccess {
-                                            feedback = "已加入上传队列，准备下一张"
-                                            detectedToken = null
-                                            stableFrames = 0
-                                        }.onFailure {
-                                            feedback = "本地队列保存失败，请重试"
-                                        }
-                                        isCapturing = false
-                                    }
-                                },
-                                onError = {
-                                    plan.file.delete()
-                                    feedback = "拍摄失败，请保持设备稳定后重试"
-                                    isCapturing = false
-                                },
-                            )
-                        },
-                        enabled = cameraReady && stableFrames >= 2 && !isCapturing,
-                        modifier = Modifier.size(72.dp),
-                        shape = RoundedCornerShape(36.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    ) {
-                        if (isCapturing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(26.dp),
-                                strokeWidth = 3.dp,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                            )
-                        } else {
-                            Icon(Icons.Rounded.PhotoCamera, contentDescription = "拍摄", modifier = Modifier.size(30.dp))
-                        }
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SummaryItem("已扫描", queue.size.toString(), Modifier.weight(1f))
-                    SummaryItem("待上传", pendingCount.toString(), Modifier.weight(1f))
-                    SummaryItem("处理中", processingCount.toString(), Modifier.weight(1f))
-                    SummaryItem("异常", reviewCount.toString(), Modifier.weight(1f))
-                }
-                if (failedCount > 0) {
-                    TextButton(
-                        onClick = {
-                            scope.launch {
-                                queue.filter { it.uploadStatus == ScanStatus.FAILED.name }
-                                    .forEach { queueRepository.retry(it.localCaptureId) }
-                                feedback = "已重新加入上传队列"
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(Color.Black),
+                ) {
+                    CameraSurface(
+                        lifecycleOwner = lifecycleOwner,
+                        modifier = Modifier.fillMaxSize(),
+                        onQrDetected = { token ->
+                            if (token == detectedToken) {
+                                stableFrames = (stableFrames + 1).coerceAtMost(3)
+                            } else {
+                                detectedToken = token
+                                stableFrames = 1
                             }
                         },
-                        modifier = Modifier.align(Alignment.End),
+                        onCameraState = { ready, error ->
+                            cameraReady = ready
+                            cameraError = error
+                        },
+                        onFrameQuality = { frameQualityMessage = it },
+                        onControllerReady = { cameraController = it },
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 16.dp)
+                            .border(3.dp, frameColor, RoundedCornerShape(22.dp)),
+                    )
+
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 18.dp),
+                        color = Color.Black.copy(alpha = 0.55f),
+                        shape = RoundedCornerShape(14.dp),
                     ) {
-                        Text("上传失败 $failedCount 张，点击重试")
+                        Text(
+                            text = if (detectedToken == null) "将答题卡放入画面" else "页面已识别，画面稳定后拍摄",
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                 }
-                if (feedback != null) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(feedback!!, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .navigationBarsPadding()
+                        .padding(horizontal = 18.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = when {
+                            cameraError != null -> cameraError!!
+                            isCapturing -> "正在保存高质量照片…"
+                            frameQualityMessage != null -> frameQualityMessage!!
+                            detectedToken == null -> "请将二维码放入画面"
+                            stableFrames < 2 -> "页面正在稳定…"
+                            else -> "可以拍摄"
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        color = if (cameraError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    if (detectedToken != null) {
+                        Text(
+                            "页面 ${displayToken(detectedToken!!)}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Box(Modifier.fillMaxWidth().height(72.dp)) {
+                        Button(
+                            onClick = {
+                                val pageToken = detectedToken ?: return@Button
+                                val controller = cameraController ?: return@Button
+                                val plan = queueRepository.newCapturePlan()
+                                isCapturing = true
+                                feedback = null
+                                controller.capture(
+                                    plan = plan,
+                                    onSaved = { savedPlan ->
+                                        scope.launch {
+                                            runCatching {
+                                                queueRepository.enqueueCapture(session.id, scannerSession.id, pageToken, savedPlan)
+                                            }.onSuccess {
+                                                feedback = "已加入上传队列，准备下一张"
+                                                detectedToken = null
+                                                stableFrames = 0
+                                            }.onFailure {
+                                                feedback = "本地队列保存失败，请重试"
+                                            }
+                                            isCapturing = false
+                                        }
+                                    },
+                                    onError = {
+                                        plan.file.delete()
+                                        feedback = "拍摄失败，请保持设备稳定后重试"
+                                        isCapturing = false
+                                    },
+                                )
+                            },
+                            enabled = cameraReady && stableFrames >= 2 && !isCapturing,
+                            modifier = Modifier.size(72.dp).align(Alignment.Center),
+                            shape = RoundedCornerShape(36.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                        ) {
+                            if (isCapturing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(26.dp),
+                                    strokeWidth = 3.dp,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                )
+                            } else {
+                                Icon(Icons.Rounded.PhotoCamera, contentDescription = "拍摄", modifier = Modifier.size(30.dp))
+                            }
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        SummaryItem("已扫描", queue.size.toString(), Modifier.weight(1f))
+                        SummaryItem("待上传", pendingCount.toString(), Modifier.weight(1f))
+                        SummaryItem("处理中", processingCount.toString(), Modifier.weight(1f))
+                        SummaryItem("异常", reviewCount.toString(), Modifier.weight(1f))
+                    }
+                    if (failedCount > 0) {
+                        TextButton(
+                            onClick = {
+                                scope.launch {
+                                    queue.filter { it.uploadStatus == ScanStatus.FAILED.name }
+                                        .forEach { queueRepository.retry(it.localCaptureId) }
+                                    feedback = "已重新加入上传队列"
+                                }
+                            },
+                        ) {
+                            Text("上传失败 $failedCount 张，点击重试")
+                        }
+                    }
+                    if (feedback != null) {
+                        Text(feedback!!, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }
@@ -276,6 +292,7 @@ fun ScannerScreen(
 @Composable
 private fun CameraSurface(
     lifecycleOwner: LifecycleOwner,
+    modifier: Modifier,
     onQrDetected: (String) -> Unit,
     onFrameQuality: (String?) -> Unit,
     onCameraState: (Boolean, String?) -> Unit,
@@ -301,13 +318,15 @@ private fun CameraSurface(
         )
     }
     DisposableEffect(controller) {
-        controller.bind(previewView)
-        onControllerReady(controller)
         onDispose { controller.close() }
     }
     AndroidView(
-        factory = { previewView },
-        modifier = Modifier.fillMaxSize().padding(top = 76.dp, bottom = 190.dp),
+        factory = {
+            previewView.doOnAttach { controller.bind(previewView) }
+            onControllerReady(controller)
+            previewView
+        },
+        modifier = modifier,
     )
 }
 
