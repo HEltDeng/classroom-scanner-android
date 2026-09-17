@@ -73,7 +73,7 @@ class ScannerCameraController(
                     )
                     onCameraReady(true, null)
                 }.onFailure { error ->
-                    Log.e(TAG, "CameraX binding failed", error)
+                    Log.e(TAG, "Camera pipeline initialization failed", error)
                     onCameraReady(false, "无法启动相机，请检查权限或设备相机状态")
                 }
             },
