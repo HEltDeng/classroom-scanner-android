@@ -28,7 +28,7 @@ class BackendRepository(
     }
 
     suspend fun activeSessions(classId: String): List<AssessmentSession> = dataSource.getActiveSessions(classId)
-        .filter { it.status.equals("ACTIVE", ignoreCase = true) }
+        .filter { it.status.uppercase() in setOf("ACTIVE", "CLOSED") }
         .map {
             AssessmentSession(
                 id = it.id,

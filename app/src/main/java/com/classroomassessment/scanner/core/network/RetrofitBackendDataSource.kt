@@ -53,7 +53,7 @@ class RetrofitBackendDataSource(
     override suspend fun getClasses(): List<ClassroomDto> = classService.getClasses()
 
     override suspend fun getActiveSessions(classId: String): List<AssessmentSessionDto> =
-        sessionService.getActiveSessions(classId, "ACTIVE")
+        sessionService.getActiveSessions(classId, null)
 
     override suspend fun createOrGetScannerSession(sessionId: String): ScannerSessionDto =
         sessionService.createOrGetScannerSession(sessionId)
@@ -127,7 +127,7 @@ private interface RetrofitSessionService {
     @GET("classes/{classId}/sessions")
     suspend fun getActiveSessions(
         @Path("classId") classId: String,
-        @Query("status") status: String,
+        @Query("status") status: String?,
     ): List<AssessmentSessionDto>
 
     @POST("sessions/{sessionId}/scan-session")
